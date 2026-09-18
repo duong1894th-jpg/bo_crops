@@ -216,7 +216,13 @@ run_seed_for_crop <- function(seed, X_bo, C_bo, Y_bo, actual_max) {
   return(list(IVAN = ivan_res, CBO = cbo_res, SBO = sbo_res, RANDOM = rand_res))
 }
 
-crops <- c("Lettuce", "Strawberry", "Spinach", "Asparagus", "Cabbage")
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) > 0) {
+  crops <- args
+} else {
+  crops <- c("Lettuce", "Strawberry", "Spinach", "Asparagus", "Cabbage")
+}
+
 
 for (crop in crops) {
   cat(sprintf("\n=========================================\n"))
