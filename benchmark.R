@@ -115,7 +115,7 @@ GP <- function(X1, X2, C1, C2, l_x, l_c, Y, sigma, noise_var) {
 cat("Loading Data...\n")
 nutrient_full <- read.csv('Soil Nutrients.csv')
 
-N_budget <- 20
+N_budget <- 100
 batch_size <- 5
 seeds <- 1:100
 
