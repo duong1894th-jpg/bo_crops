@@ -146,7 +146,7 @@ run_seed_for_crop <- function(seed, X_bo, C_bo, Y_bo, actual_max) {
       best_val <- Inf; best_par <- NULL
       for (r in 1:3) {
         if (model_type == "IVAN") {
-          init <- c(log(runif(1,0.05,2)), log(runif(1,0.001,1)), log(0.01), rep(0, ncol(X_tr)), rep(0, ncol(C_tr)))
+          init <- c(log(runif(1,0.05,2)), log(runif(1,0.05,2)), log(runif(1,0.001,1)), log(0.01), rep(0, ncol(X_tr)), rep(0, ncol(C_tr)))
           res <- optim(init, neg_log_likelihood_ivan, X_train=X_tr, C_train=C_tr, y=Y_tr, method="BFGS")
         } else {
           init <- c(log(runif(1,0.05,2)), log(runif(1,0.05,2)), log(runif(1,0.001,1)), log(0.01))
@@ -247,7 +247,7 @@ for (crop in crops) {
   C_bo[] <- lapply(C_bo, minMax)
   actual_max <- max(Y_bo)
   
-  results_list <- mclapply(seeds, function(s) run_seed_for_crop(s, X_bo, C_bo, Y_bo, actual_max), mc.cores = detectCores() - 1)
+  results_list <- mclapply(seeds, function(s) run_seed_for_crop(s, X_bo, C_bo, Y_bo, actual_max))
   
   # Aggregate
   agg_ivan <- do.call(rbind, lapply(results_list, function(r) r$IVAN))
