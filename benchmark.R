@@ -42,7 +42,7 @@ get_expected_loss <- function(mu, sd, xi_n, remaining_budget) {
 # ---------------------------------------------------------
 # MODEL 1: IVAN'S HETEROSKEDASTIC BO
 # ---------------------------------------------------------
-neg_log_likelihood_ivan <- function(params, X_train, C_train, y) {
+neg_log_likelihood_ivan <- function(params, X_train, C_train, y) { 
   l_x <- exp(params[1]); l_c <- exp(params[2]); sigma <- exp(params[3])
   alpha_noise <- params[4]
   nx <- ncol(X_train); nc <- ncol(C_train)
@@ -133,7 +133,7 @@ run_seed_for_crop <- function(seed, X_bo, C_bo, Y_bo, actual_max) {
     history_batch_max <- c()
     epsilon <- 0.02
     
-    while(nrow(X_tr) < N_budget && max(Y_tr) < actual_max && length(Y_te) > 0) {
+    cat("Round nrow=", nrow(X_tr), "\n"); while(nrow(X_tr) < N_budget && max(Y_tr) < actual_max && length(Y_te) > 0) {
       if (model_type == "RANDOM") {
         sel_idx <- sample(1:nrow(X_te), min(batch_size, nrow(X_te)))
         batch_y <- Y_te[sel_idx]
@@ -147,10 +147,10 @@ run_seed_for_crop <- function(seed, X_bo, C_bo, Y_bo, actual_max) {
       for (r in 1:3) {
         if (model_type == "IVAN") {
           init <- c(log(runif(1,0.05,2)), log(runif(1,0.05,2)), log(runif(1,0.001,1)), log(0.01), rep(0, ncol(X_tr)), rep(0, ncol(C_tr)))
-          res <- optim(init, neg_log_likelihood_ivan, X_train=X_tr, C_train=C_tr, y=Y_tr, method="BFGS")
+          res <- tryCatch(optim(init, neg_log_likelihood_ivan, X_train=X_tr, C_train=C_tr, y=Y_tr, method="Nelder-Mead", control=list(maxit=500)), error = function(e) list(value=Inf, par=init))
         } else {
           init <- c(log(runif(1,0.05,2)), log(runif(1,0.05,2)), log(runif(1,0.001,1)), log(0.01))
-          res <- optim(init, neg_log_likelihood_cgp, X_train=X_tr, C_train=C_tr, y=Y_tr, method="BFGS")
+          res <- tryCatch(optim(init, neg_log_likelihood_cgp, X_train=X_tr, C_train=C_tr, y=Y_tr, method="Nelder-Mead", control=list(maxit=500)), error = function(e) list(value=Inf, par=init))
         }
         if (res$value < best_val) { best_val <- res$value; best_par <- res$par }
       }
@@ -205,7 +205,9 @@ run_seed_for_crop <- function(seed, X_bo, C_bo, Y_bo, actual_max) {
       history_batch_max <- c(history_batch_max, rep(pad_val, expected_rounds - length(history_batch_max)))
     }
     
-    return(actual_max - cummax(history_batch_max))
+    res <- actual_max - cummax(history_batch_max)
+    if (length(res) > expected_rounds) res <- res[1:expected_rounds]
+    return(res)
   }
   
   ivan_res <- run_model("IVAN")
@@ -247,7 +249,7 @@ for (crop in crops) {
   C_bo[] <- lapply(C_bo, minMax)
   actual_max <- max(Y_bo)
   
-  results_list <- mclapply(seeds, function(s) run_seed_for_crop(s, X_bo, C_bo, Y_bo, actual_max))
+  results_list <- mclapply(seeds, function(s) run_seed_for_crop(s, X_bo, C_bo, Y_bo, actual_max), mc.cores = detectCores() - 1)
   
   # Aggregate
   agg_ivan <- do.call(rbind, lapply(results_list, function(r) r$IVAN))
